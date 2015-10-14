@@ -21,12 +21,14 @@ function Introducer (opts) {
   this.recent = {}
   this.recentLen = 0
   this.metric = opts.metric
+  this._pending = 0
 }
 
 Introducer.prototype.createStream = function () {
   var self = this
   var stream = createStream()
   var otherId = null, otherIdHex = null
+  self._pending++
   stream.on('message', function (msg) {
     var hash = createHash('sha1').update(stream._buffer).digest()
     if (self.recent[hash]) return
@@ -39,6 +41,7 @@ Introducer.prototype.createStream = function () {
       otherIdHex = otherId.toString('hex')
       self.neighbors[otherIdHex] = { stream: stream, id: otherId }
       self.emit('neighbor', otherId, stream)
+      if (--self._pending === 0) self.emit('_ready')
     }
     self._onMessage(otherId, msg)
   })
@@ -46,7 +49,7 @@ Introducer.prototype.createStream = function () {
     if (otherId) {
       delete self.neighbors[otherIdHex]
       self.emit('disconnect', otherId)
-    }
+    } else if (--self._pending === 0) self.emit('_ready')
   })
   stream.message({ route: { hops: [ self.id ] } })
   return stream
@@ -73,6 +76,9 @@ Introducer.prototype._onMessage = function (id, msg) {
 Introducer.prototype.search = function (q, cb) {
   if (!q.target) throw new Error('query target not provided')
   var self = this
+  if (self._pending > 0) {
+    return self.once('_ready', function () { self.search(q, cb) })
+  }
   self.send({
     target: q.target,
     signal: q.signal,
