@@ -69,7 +69,7 @@ Introducer.prototype._purgeRecent = function (now) {
 Introducer.prototype._onMessage = function (id, msg) {
   var self = this
   if (msg.target && msg.route && msg.route.hops.length < 2) {
-    self.send(xtend(msg, { route: msg.route.hops.concat(self.id) }))
+    self.send(msg)
   }
 }
 
@@ -82,7 +82,7 @@ Introducer.prototype.search = function (q, cb) {
   self.send({
     target: q.target,
     signal: q.signal,
-    route: q.route ? q.route.concat(self.id) : [self.id]
+    route: q.route
   })
 }
 
@@ -91,16 +91,20 @@ Introducer.prototype.send = function (q, cb) {
   var sorted = self._sort(q.target)
   if (q.route) {
     var routed = {}
-    q.route.forEach(function (id) { routed[id.toString('hex')] = true })
+    q.route.hops.forEach(function (id) { routed[id.toString('hex')] = true })
     sorted = sorted.filter(function (key) { return !routed[key] })
   }
   var len = Math.min(sorted.length, 2)
+  var hops = q.route && q.route.hops
+    ? q.route.hops.concat(self.id)
+    : q.route ? q.route.concat(self.id) : [self.id]
+
   for (var i = 0; i < len; i++) {
     var key = sorted[i]
     self.neighbors[key].stream.message({
       target: q.target,
       signal: q.signal,
-      route: { hops: q.route ? q.route.concat(self.id) : [self.id] }
+      route: { hops: hops }
     })
   }
 }
