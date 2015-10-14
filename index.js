@@ -6,6 +6,8 @@ var endof = require('end-of-stream')
 var fs = require('fs')
 var path = require('path')
 var schema = fs.readFileSync(path.join(__dirname, 'schema.proto'), 'utf8')
+var createStream = pbuf(schema)
+var createHash = require('crypto').createHash
 
 module.exports = Introducer
 inherits(Introducer, EventEmitter)
@@ -23,7 +25,7 @@ function Introducer (opts) {
 
 Introducer.prototype.createStream = function () {
   var self = this
-  var stream = pbuf(schema)
+  var stream = createStream()
   var otherId = null, otherIdHex = null
   stream.on('message', function (msg) {
     var hash = createHash('sha1').update(stream._buffer).digest()
@@ -33,7 +35,7 @@ Introducer.prototype.createStream = function () {
     if (++self.recentLen >= 100) self._purgeRecent(now)
 
     if (!otherId && msg.route) {
-      otherId = msg.route[msg.route[msg.route.length-1]]
+      otherId = msg.route.hops[msg.route.hops.length-1]
       otherIdHex = otherId.toString('hex')
       self.neighbors[otherIdHex] = { stream: stream, id: otherId }
       self.emit('neighbor', otherId, stream)
@@ -46,7 +48,7 @@ Introducer.prototype.createStream = function () {
       self.emit('disconnect', otherId)
     }
   })
-  stream.message({ route: [ self.id ] })
+  stream.message({ route: { hops: [ self.id ] } })
   return stream
 }
 
@@ -63,9 +65,8 @@ Introducer.prototype._purgeRecent = function (now) {
 
 Introducer.prototype._onMessage = function (id, msg) {
   var self = this
-  console.log('MESSAGE', msg)
-  if (msg.target && msg.route && msg.route.length < 2) {
-    self.send(xtend(msg, { route: msg.route.concat(self.id) }))
+  if (msg.target && msg.route && msg.route.hops.length < 2) {
+    self.send(xtend(msg, { route: msg.route.hops.concat(self.id) }))
   }
 }
 
@@ -93,7 +94,7 @@ Introducer.prototype.send = function (q, cb) {
     self.neighbors[key].stream.message({
       target: q.target,
       signal: q.signal,
-      route: q.route ? q.route.concat(self.id) : [self.id]
+      route: { hops: q.route ? q.route.concat(self.id) : [self.id] }
     })
   }
 }
