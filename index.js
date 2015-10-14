@@ -16,6 +16,8 @@ function Introducer (opts) {
   if (!opts) opts = {}
   this.id = opts.id
   this.neighbors = {}
+  this.recent = {}
+  this.recentLen = 0
   this.metric = opts.metric
 }
 
@@ -24,6 +26,12 @@ Introducer.prototype.createStream = function () {
   var stream = pbuf(schema)
   var otherId = null, otherIdHex = null
   stream.on('message', function (msg) {
+    var hash = createHash('sha1').update(stream._buffer).digest()
+    if (self.recent[hash]) return
+    var now = Date.now()
+    self.recent[hash] = now
+    if (++self.recentLen >= 100) self._purgeRecent(now)
+
     if (!otherId && msg.route) {
       otherId = msg.route[msg.route[msg.route.length-1]]
       otherIdHex = otherId.toString('hex')
@@ -42,18 +50,52 @@ Introducer.prototype.createStream = function () {
   return stream
 }
 
+Introducer.prototype._purgeRecent = function (now) {
+  var self = this
+  var sorted = Object.keys(self.recent).sort(function (a, b) {
+    return self.recent[a] < self.recent[b] ? -1 : 1
+  })
+  for (var i = 0; i < 10; i++) {
+    delete self.recent[sorted[i]]
+    self.recentLen--
+  }
+}
+
 Introducer.prototype._onMessage = function (id, msg) {
   var self = this
   console.log('MESSAGE', msg)
+  if (msg.target && msg.route && msg.route.length < 2) {
+    self.send(xtend(msg, { route: msg.route.concat(self.id) }))
+  }
 }
 
-Introducer.prototype.search = function (target, signal) {
+Introducer.prototype.search = function (q, cb) {
+  if (!q.target) throw new Error('query target not provided')
   var self = this
-  var sorted = self._sort(target)
-
-  Object.keys(self.neighbors).sort(function (a, b) {
-    return self._compare(a, b)
+  self.send({
+    target: q.target,
+    signal: q.signal,
+    route: q.route ? q.route.concat(self.id) : [self.id]
   })
+}
+
+Introducer.prototype.send = function (q, cb) {
+  var self = this
+  var sorted = self._sort(q.target)
+  if (q.route) {
+    var routed = {}
+    q.route.forEach(function (id) { routed[id.toString('hex')] = true })
+    sorted = sorted.filter(function (key) { return !routed[key] })
+  }
+  var len = Math.min(sorted.length, 2)
+  for (var i = 0; i < len; i++) {
+    var key = sorted[i]
+    self.neighbors[key].stream.message({
+      target: q.target,
+      signal: q.signal,
+      route: q.route ? q.route.concat(self.id) : [self.id]
+    })
+  }
 }
 
 Introducer.prototype._sort = function (target) {
