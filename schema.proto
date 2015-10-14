@@ -1,5 +1,5 @@
 message Message {
-  required bytes target = 1;
+  optional bytes target = 1;
   optional bytes signal = 2;
   oneof path {
     repeated bytes route = 3;
