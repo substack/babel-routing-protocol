@@ -64,7 +64,8 @@ Introducer.prototype._onMessage = function (msg) {
 
 Introducer.prototype.send = function (target, payload) {
   var self = this
-  var sent = {}, sentPending = Math.max(self.streams.length, 2)
+  var sent = {}
+  var sentPending = Math.max(self.streams.length, 2)
   while (sentPending > 0) {
     var i = Math.floor(Math.random() * self.streams.length)
     if (sent[i]) continue
