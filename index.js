@@ -31,14 +31,15 @@ Router.prototype.createStream = function (addr) {
   var decoder = decode(function (packet) {
     console.log('PACKET=', packet)
     if (packet.type === 'hello') {
-      encoder.write(encode.packet(Buffer.concat([
-        encode.ihu({
+      encoder.write(encode([
+        {
+          type: 'ihu',
           addr: addr,
           addrEnc: 1,
           csec: 50,
           rxcost: 555
-        })
-      ])))
+        }
+      ]))
     }
   })
   var encoder = through()
@@ -49,10 +50,13 @@ Router.prototype.createStream = function (addr) {
   self.iftable[ifdex] = {
     helloSeq: 0,
     helloInterval: setInterval(function () {
-      stream.push(encode.packet(Buffer.concat([
-        encode.hello({ seq: 1, csec: 50 })
-      ])))
-      // hello and iHU packets
+      stream.push(encode([
+        {
+          type: 'hello',
+          seq: 1,
+          csec: 50
+        }
+      ]))
     }, 1000),
     updateInterval: setInterval(function () {
       // route updates
