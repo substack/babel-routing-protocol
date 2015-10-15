@@ -23,7 +23,7 @@ var alist, edges = []
 
 do {
   nodes.forEach(function (node, nodei) {
-    for (var i = 0; i < 3; i++) {
+    for (var i = 0; i < 5; i++) {
       do {
         var x = Math.floor(Math.random() * nodes.length)
         var key = [nodei,x].sort().join(',')

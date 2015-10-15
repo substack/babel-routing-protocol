@@ -63,17 +63,19 @@ Introducer.prototype._onMessage = function (msg) {
   } else self.send(msg.target, msg.payload)
 }
 
-Introducer.prototype.send = function (target, payload) {
+Introducer.prototype.send = function (target, payload, routes) {
   var self = this
   var sent = {}
-  var sentPending = Math.max(self.streams.length, 2)
+  var sentPending = Math.min(self.streams.length, 3)
   var msg = {
+    routes: (routes || []).concat(self.id),
     target: target,
     payload: payload
   }
   while (sentPending > 0) {
     var i = Math.floor(Math.random() * self.streams.length)
     if (sent[i]) continue
+    sent[i] = true
     sentPending--
     self.streams[i].message(msg)
     self.emit('send', msg)

@@ -1,4 +1,5 @@
 message Message {
   required bytes target = 1;
   required bytes payload = 2;
+  repeated bytes routes = 3;
 }
