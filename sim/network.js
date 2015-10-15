@@ -40,7 +40,7 @@ do {
   alist = toalist(edges)
 } while (connected(alist).length > 1)
 
-var SIZE = 32, NUMBER = 10
+var SIZE = 32, NUMBER = 100
 var messages = {}
 for (var i = 0; i < NUMBER; i++) {
   var buf = randombytes(SIZE)
