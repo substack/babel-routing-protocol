@@ -1,5 +1,4 @@
 message Message {
   optional bytes target = 1;
   optional bytes payload = 2;
-  repeated bytes route = 3;
 }
