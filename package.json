@@ -1,0 +1,41 @@
+{
+  "name": "babel-routing-protocol",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "tape test/*.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/substack/babel-routing-protocol.git"
+  },
+  "keywords": [
+    "rfc6126",
+    "routing",
+    "algorithm",
+    "network",
+    "topology",
+    "p2p",
+    "ad-hoc"
+  ],
+  "author": "substack",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/substack/babel-routing-protocol/issues"
+  },
+  "homepage": "https://github.com/substack/babel-routing-protocol#readme",
+  "dependencies": {
+    "end-of-stream": "^1.1.0",
+    "inherits": "^2.0.1"
+  },
+  "devDependencies": {
+    "connected-components": "^1.0.0",
+    "edges-to-adjacency-list": "^1.0.0",
+    "randombytes": "^2.0.1",
+    "summary-statistics": "^1.0.0",
+    "tape": "^4.2.1",
+    "text-table": "^0.2.0",
+    "through2": "^2.0.0"
+  }
+}
