@@ -1,4 +1,4 @@
 message Message {
-  optional bytes target = 1;
-  optional bytes payload = 2;
+  required bytes target = 1;
+  required bytes payload = 2;
 }
