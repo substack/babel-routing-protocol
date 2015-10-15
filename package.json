@@ -26,8 +26,10 @@
   },
   "homepage": "https://github.com/substack/babel-routing-protocol#readme",
   "dependencies": {
+    "duplexer2": "^0.1.0",
     "end-of-stream": "^1.1.0",
-    "inherits": "^2.0.1"
+    "inherits": "^2.0.1",
+    "readable-stream": "^2.0.2"
   },
   "devDependencies": {
     "connected-components": "^1.0.0",

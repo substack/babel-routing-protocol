@@ -1,4 +1,5 @@
 var encode = require('./lib/encode.js')
+var decode = require('./lib/decode.js')
 var inherits = require('inherits')
 var EventEmitter = require('events').EventEmitter
 var endof = require('end-of-stream')
@@ -26,9 +27,13 @@ function Introducer (opts) {
 
 Introducer.prototype.createStream = function () {
   var self = this
-  var stream = through()
+  var decoder = decode(function (packet) {
+    console.log('PACKET=', packet)
+  })
+  var encoder = through()
+
   var ifdex = seql.ifseq++
-  self.streams[ifdex] = stream
+  self.streams[ifdex] = duplexer(decoder, encoder)
   self.iftable[ifdex] = {
     helloSeq: 0,
     helloInterval: setInterval(function () {
