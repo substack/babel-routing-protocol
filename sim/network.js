@@ -30,8 +30,8 @@ do {
       } while (connections[key])
       connections[key] = true
       edges.push([nodei,x], [x,nodei])
-      var a = nodes[x].createStream()
-      var b = node.createStream()
+      var a = nodes[x].createStream(randombytes(4))
+      var b = node.createStream(randombytes(4))
       measure(x, a)
       measure(nodei, b)
       a.pipe(b).pipe(a)

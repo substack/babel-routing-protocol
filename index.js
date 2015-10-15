@@ -6,11 +6,11 @@ var endof = require('end-of-stream')
 var through = require('through2')
 var duplexer = require('duplexer2')
 
-module.exports = Introducer
-inherits(Introducer, EventEmitter)
+module.exports = Router
+inherits(Router, EventEmitter)
 
-function Introducer (opts) {
-  if (!(this instanceof Introducer)) return new Introducer(opts)
+function Router (opts) {
+  if (!(this instanceof Router)) return new Router(opts)
   EventEmitter.call(this)
   if (!opts) opts = {}
   this.id = opts.id // 8 octets
@@ -26,10 +26,20 @@ function Introducer (opts) {
   this.pending = {}
 }
 
-Introducer.prototype.createStream = function () {
+Router.prototype.createStream = function (addr) {
   var self = this
   var decoder = decode(function (packet) {
     console.log('PACKET=', packet)
+    if (packet.type === 'hello') {
+      encoder.write(encode.packet(Buffer.concat([
+        encode.ihu({
+          addr: addr,
+          addrEnc: 1,
+          csec: 50,
+          rxcost: 555
+        })
+      ])))
+    }
   })
   var encoder = through()
 
@@ -39,7 +49,7 @@ Introducer.prototype.createStream = function () {
   self.iftable[ifdex] = {
     helloSeq: 0,
     helloInterval: setInterval(function () {
-      encoder.write(encode.packet(Buffer.concat([
+      stream.push(encode.packet(Buffer.concat([
         encode.hello({ seq: 1, csec: 50 })
       ])))
       // hello and iHU packets
@@ -61,9 +71,9 @@ Introducer.prototype.createStream = function () {
   return stream
 }
 
-Introducer.prototype.multisend = function (buf) {
+Router.prototype.multisend = function (buf) {
   this.streams.forEach(function (s) { s.write(buf) })
 }
 
-Introducer.prototype.send = function (addr, buf) {
+Router.prototype.send = function (addr, buf) {
 }
