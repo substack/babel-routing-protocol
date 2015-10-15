@@ -6,16 +6,20 @@ var through = require('through2')
 var summary = require('summary-statistics')
 var table = require('text-table')
 
+var bytes = [], sent = []
+
 var nodes = []
-for (var i = 0; i < 50; i++) {
-  nodes.push(new Introducer({
+for (var i = 0; i < 50; i++) (function (index) {
+  var node = new Introducer({
     id: randombytes(20)
-  }))
-}
+  })
+  nodes.push(node)
+  sent[index] = 0
+  node.on('send', function () { sent[index]++ })
+})(i)
 
 var connections = {}
 var alist, edges = []
-var bytes = []
 
 do {
   nodes.forEach(function (node, nodei) {
@@ -43,15 +47,17 @@ nodes[1].on('message', function (buf) {
 })
 
 process.once('exit', function () {
-  var stat = summary(bytes)
+  var bstat = summary(bytes)
+  var sstat = summary(sent)
   console.log(table([
-    [ 'total bytes', stat.sum ],
-    [ 'bytes/node', stat.avg ],
-    [ 'min bytes', stat.min ],
-    [ 'q1 bytes', stat.q1 ],
-    [ 'med bytes', stat.median ],
-    [ 'q3 bytes', stat.q3 ],
-    [ 'max bytes', stat.max ]
+    [ '', 'bytes', 'messages' ],
+    [ 'sum', bstat.sum, sstat.sum ],
+    [ 'avg', bstat.avg, sstat.avg ],
+    [ 'min', bstat.min, sstat.min ],
+    [ 'q1', bstat.q1, sstat.q1 ],
+    [ 'med', bstat.median, sstat.median ],
+    [ 'q3', bstat.q3, sstat.q3 ],
+    [ 'max', bstat.max, sstat.max ]
   ]))
 })
 

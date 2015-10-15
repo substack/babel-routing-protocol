@@ -27,6 +27,7 @@ Introducer.prototype.createStream = function () {
   var self = this
   var stream = createStream()
   stream.on('message', function (msg) {
+    self.emit('receive', msg)
     var hash = createHash('sha1').update(stream._buffer).digest()
     if (self.recent[hash]) return
     var now = Date.now()
@@ -66,13 +67,15 @@ Introducer.prototype.send = function (target, payload) {
   var self = this
   var sent = {}
   var sentPending = Math.max(self.streams.length, 2)
+  var msg = {
+    target: target,
+    payload: payload
+  }
   while (sentPending > 0) {
     var i = Math.floor(Math.random() * self.streams.length)
     if (sent[i]) continue
     sentPending--
-    self.streams[i].message({
-      target: target,
-      payload: payload
-    })
+    self.streams[i].message(msg)
+    self.emit('send', msg)
   }
 }
