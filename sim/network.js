@@ -40,17 +40,26 @@ do {
   alist = toalist(edges)
 } while (connected(alist).length > 1)
 
-nodes[0].send(nodes[1].id, Buffer('hello!'))
+var SIZE = 32, NUMBER = 10
+var messages = {}
+for (var i = 0; i < NUMBER; i++) {
+  var buf = randombytes(SIZE)
+  messages[buf.toString('hex')] = true
+  nodes[0].send(nodes[1].id, buf)
+}
 
 nodes[1].on('message', function (buf) {
-  console.log('MESSAGE=' + buf)
+  delete messages[buf.toString('hex')]
 })
 
 process.once('exit', function () {
   var bstat = summary(bytes)
   var sstat = summary(sent)
+  var missed = Object.keys(messages).length
   console.log(table([
     [ '', 'bytes', 'messages' ],
+    [ 'SENT', (SIZE + 20) * NUMBER, NUMBER ],
+    [ 'MISSED', (SIZE + 20) * missed, missed ],
     [ 'sum', bstat.sum, sstat.sum ],
     [ 'avg', bstat.avg, sstat.avg ],
     [ 'min', bstat.min, sstat.min ],
