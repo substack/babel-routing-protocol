@@ -1,16 +1,4 @@
-message Route {
-  repeated bytes hops = 1;
-}
-
-message Return {
-  repeated bytes hops = 1;
-}
-
 message Message {
-  optional bytes target = 1;
-  optional bytes signal = 2;
-  oneof path {
-    Route route = 3;
-    Return return = 4;
-  }
+  required bytes target = 1;
+  required bytes payload = 2;
 }

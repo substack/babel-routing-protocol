@@ -1,5 +1,4 @@
 var randombytes = require('randombytes')
-var xor = require('bitwise-xor')
 var Introducer = require('../')
 var connected = require('connected-components')
 var toalist = require('edges-to-adjacency-list')
@@ -7,8 +6,7 @@ var toalist = require('edges-to-adjacency-list')
 var nodes = []
 for (var i = 0; i < 50; i++) {
   nodes.push(new Introducer({
-    id: randombytes(20),
-    metric: xor
+    id: randombytes(20)
   }))
 }
 
@@ -31,8 +29,14 @@ do {
   alist = toalist(edges)
 } while (connected(alist).length > 1)
 
+/*
 edges.forEach(function (edge) {
   console.log(edge)
 })
+*/
 
-nodes[0].search({ target: nodes[1].id })
+nodes[0].send(nodes[1].id, Buffer('hello!'))
+
+nodes[1].on('message', function (buf) {
+  console.log('MESSAGE=' + buf)
+})
