@@ -4,6 +4,7 @@ var inherits = require('inherits')
 var EventEmitter = require('events').EventEmitter
 var endof = require('end-of-stream')
 var through = require('through2')
+var duplexer = require('duplexer2')
 
 module.exports = Introducer
 inherits(Introducer, EventEmitter)
@@ -32,13 +33,17 @@ Introducer.prototype.createStream = function () {
   })
   var encoder = through()
 
-  var ifdex = seql.ifseq++
-  self.streams[ifdex] = duplexer(decoder, encoder)
+  var ifdex = self.ifseq++
+  var stream = duplexer(decoder, encoder)
+  self.streams[ifdex] = stream
   self.iftable[ifdex] = {
     helloSeq: 0,
     helloInterval: setInterval(function () {
+      encoder.write(encode.packet(Buffer.concat([
+        encode.hello({ seq: 1, csec: 50 })
+      ])))
       // hello and iHU packets
-    }, 1000)
+    }, 1000),
     updateInterval: setInterval(function () {
       // route updates
     }, 1000)
@@ -50,9 +55,10 @@ Introducer.prototype.createStream = function () {
     exHelloSeq: 0
   }
   endof(stream, function () {
-    delete self.streams]ifdex]
+    delete self.streams[ifdex]
     delete self.iftable[ifdex]
   })
+  return stream
 }
 
 Introducer.prototype.multisend = function (buf) {

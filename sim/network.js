@@ -11,7 +11,7 @@ var bytes = [], sent = []
 var nodes = []
 for (var i = 0; i < 50; i++) (function (index) {
   var node = new Introducer({
-    id: randombytes(20)
+    id: randombytes(8)
   })
   nodes.push(node)
   sent[index] = 0
