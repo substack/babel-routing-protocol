@@ -26,14 +26,17 @@
   },
   "homepage": "https://github.com/substack/babel-routing-protocol#readme",
   "dependencies": {
+    "bellmanford": "^1.2.0",
     "duplexer2": "^0.1.0",
     "end-of-stream": "^1.1.0",
     "inherits": "^2.0.1",
     "readable-stream": "^2.0.2"
   },
   "devDependencies": {
+    "array-shuffle": "^1.0.0",
     "connected-components": "^1.0.0",
     "edges-to-adjacency-list": "^1.0.0",
+    "mock-dgram": "^0.1.2",
     "randombytes": "^2.0.1",
     "summary-statistics": "^1.0.0",
     "tape": "^4.2.1",
