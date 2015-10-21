@@ -13,7 +13,8 @@ var Simulator = require('network-simulator')
 var sim = new Simulator()
 
 var connected = {}, ifaces = {}, counts = {}, addrs = {}
-for (var i = 1; i <= 50; i++) (function (i) {
+var NODES = 5
+for (var i = 1; i <= NODES; i++) (function (i) {
   var node = sim.createNode(i, [ 'eth0', 'eth1', 'eth2', 'eth3', 'eth4' ])
   ifaces[i] = Object.keys(node.ifaces)
   var added = 0
@@ -34,12 +35,14 @@ for (var i = 1; i <= 50; i++) (function (i) {
   })
 })(i)
 
+var routers = {}
 Object.keys(sim.nodes).forEach(function (i) {
   var node = sim.nodes[i]
   var addr = '192.168.1.' + i
   counts[i] = { packets: 0, data: 0, miss: 0, match: 0 }
 
   var router = new Router({ id: randombytes(8) })
+  routers[i] = router
   var seen = {}
   Object.keys(addrs[i]).forEach(function (iface) {
     var stream = router.createStream(iface, addr)
@@ -78,13 +81,9 @@ Object.keys(sim.nodes).forEach(function (i) {
         node.send(rface, buf)
       } else {
         counts[i].miss += 1
-        var ifaces = shuf(Object.keys(node.ifaces))
-        var matches = 0
-        for (var j = 0; j < ifaces.length; j++) {
-          if (ifaces[j] === i) continue
-          node.send(ifaces[j], buf)
-          if (++matches === 2) break
-        }
+        Object.keys(node.ifaces).forEach(function (key) {
+          if (key !== i) node.send(key, buf)
+        })
       }
     })
   })
@@ -96,9 +95,20 @@ setTimeout(function () {
 }, 5000)
 
 function sendData () {
-  var pending = 100
-  var dstnode = sim.nodes[50]
-  var dst = '192.168.0.50'
+  Object.keys(routers).forEach(function (i) {
+    var router = routers[i]
+    Object.keys(router.interfaces).forEach(function (ifname) {
+      var ivs = router.interfaces[ifname].intervals
+      Object.keys(ivs).forEach(function (key) {
+        clearInterval(ivs[key])
+      })
+    })
+  })
+
+  var N = 100
+  var pending = N
+  var dstnode = sim.nodes[NODES]
+  var dst = '192.168.0.' + NODES
   var sent = {}
 
   Object.keys(dstnode.ifaces).forEach(function (iface) {
@@ -112,8 +122,8 @@ function sendData () {
     })
   })
 
-  for (var i = 0; i < 100; i++) (function (i) {
-    var srci = Math.floor(Math.random() * 49 + 1)
+  for (var i = 0; i < N; i++) (function (i) {
+    var srci = Math.floor(Math.random() * (NODES-1) + 1)
     var src = '192.168.0.' + srci
     var msg = randombytes(Math.floor(Math.random() * 1000))
     var hex = msg.toString('hex')
