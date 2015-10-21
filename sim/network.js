@@ -4,6 +4,7 @@ var through = require('through2')
 var shuf = require('array-shuffle')
 var createHash = require('crypto').createHash
 var summary = require('summary-statistics')
+var bufeq = require('buffer-equals')
 
 var ip = require('ip-packet')
 var udp = require('udp-packet')
@@ -82,21 +83,45 @@ Object.keys(sim.nodes).forEach(function (i) {
   })
 })
 
-for (var i = 0; i < 100; i++) {
-  sim.nodes[1].send('eth0', ip.encode({
+var pending = 100
+var dstnode = sim.nodes[50]
+var dst = '192.168.0.50'
+var sent = {}
+
+Object.keys(dstnode.ifaces).forEach(function (iface) {
+  dstnode.on(iface + ':message', function onmessage (buf) {
+    var packet = ip.decode(buf)
+    var hex = packet.data.toString('hex')
+    if (packet.destinationIp === dst && sent[hex] > 0) {
+      sent[hex] -= 1
+      if (--pending === 0) done()
+    }
+  })
+})
+
+for (var i = 0; i < 100; i++) (function (i) {
+  var srci = Math.floor(Math.random() * 49 + 1)
+  var src = '192.168.0.' + srci
+  var msg = randombytes(Math.floor(Math.random() * 1000))
+  var hex = msg.toString('hex')
+  sent[hex] = (sent[hex] || 0) + 1
+
+  sim.nodes[srci].send('eth0', ip.encode({
     version: 4,
     protocol: 0,
-    sourceIp: '192.168.0.1',
-    destinationIp: '192.168.0.50',
-    data: Buffer('whatever! ' + i)
+    sourceIp: src,
+    destinationIp: dst,
+    data: msg
   }))
-}
+})(i)
 
-console.log('# PACKET COUNT')
-console.log(summary(Object.keys(counts).map(function (key) {
-  return counts[key].packets
-})))
-console.log('# DATA')
-console.log(summary(Object.keys(counts).map(function (key) {
-  return counts[key].data
-})))
+function done () {
+  console.log('# PACKET COUNT')
+  console.log(summary(Object.keys(counts).map(function (key) {
+    return counts[key].packets
+  })))
+  console.log('# DATA')
+  console.log(summary(Object.keys(counts).map(function (key) {
+    return counts[key].data
+  })))
+}
