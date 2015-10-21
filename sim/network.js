@@ -79,10 +79,11 @@ Object.keys(sim.nodes).forEach(function (i) {
       } else {
         counts[i].miss += 1
         var ifaces = shuf(Object.keys(node.ifaces))
+        var matches = 0
         for (var j = 0; j < ifaces.length; j++) {
           if (ifaces[j] === i) continue
           node.send(ifaces[j], buf)
-          break
+          if (++matches === 2) break
         }
       }
     })
