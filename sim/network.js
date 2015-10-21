@@ -83,44 +83,54 @@ Object.keys(sim.nodes).forEach(function (i) {
   })
 })
 
-var pending = 100
-var dstnode = sim.nodes[50]
-var dst = '192.168.0.50'
-var sent = {}
+setTimeout(function () {
+  printSummary('WARMUP')
+  sendData()
+}, 5000)
 
-Object.keys(dstnode.ifaces).forEach(function (iface) {
-  dstnode.on(iface + ':message', function onmessage (buf) {
-    var packet = ip.decode(buf)
-    var hex = packet.data.toString('hex')
-    if (packet.destinationIp === dst && sent[hex] > 0) {
-      sent[hex] -= 1
-      if (--pending === 0) done()
-    }
+function sendData () {
+  var pending = 100
+  var dstnode = sim.nodes[50]
+  var dst = '192.168.0.50'
+  var sent = {}
+
+  Object.keys(dstnode.ifaces).forEach(function (iface) {
+    dstnode.on(iface + ':message', function onmessage (buf) {
+      var packet = ip.decode(buf)
+      var hex = packet.data.toString('hex')
+      if (packet.destinationIp === dst && sent[hex] > 0) {
+        sent[hex] -= 1
+        if (--pending === 0) done()
+      }
+    })
   })
-})
 
-for (var i = 0; i < 100; i++) (function (i) {
-  var srci = Math.floor(Math.random() * 49 + 1)
-  var src = '192.168.0.' + srci
-  var msg = randombytes(Math.floor(Math.random() * 1000))
-  var hex = msg.toString('hex')
-  sent[hex] = (sent[hex] || 0) + 1
+  for (var i = 0; i < 100; i++) (function (i) {
+    var srci = Math.floor(Math.random() * 49 + 1)
+    var src = '192.168.0.' + srci
+    var msg = randombytes(Math.floor(Math.random() * 1000))
+    var hex = msg.toString('hex')
+    sent[hex] = (sent[hex] || 0) + 1
 
-  sim.nodes[srci].send('eth0', ip.encode({
-    version: 4,
-    protocol: 0,
-    sourceIp: src,
-    destinationIp: dst,
-    data: msg
-  }))
-})(i)
+    sim.nodes[srci].send('eth0', ip.encode({
+      version: 4,
+      protocol: 0,
+      sourceIp: src,
+      destinationIp: dst,
+      data: msg
+    }))
+  })(i)
+}
 
-function done () {
-  console.log('# PACKET COUNT')
+function done () { printSummary('FINAL') }
+
+function printSummary (pre) {
+  console.log('-------------------------')
+  console.log('# ' + pre + ' PACKET COUNT')
   console.log(summary(Object.keys(counts).map(function (key) {
     return counts[key].packets
   })))
-  console.log('# DATA')
+  console.log('# ' + pre + ' DATA')
   console.log(summary(Object.keys(counts).map(function (key) {
     return counts[key].data
   })))
