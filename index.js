@@ -21,12 +21,25 @@ function Router (opts) {
   this.pending = {}
 }
 
-Router.prototype.createStream = function (ifaceName, addr) {
+Router.prototype.createStream = function (ifname, addr) {
   var self = this
-  var iface = new Iface(addr)
-  self.interfaces[ifaceName] = iface
+  var iface = new Iface(this.id, addr)
+  self.interfaces[ifname] = iface
+  self.neighbors[addr] = {
+    iface: iface,
+    ifname: ifname
+  }
   endof(iface, function () {
-    delete self.interfaces[ifaceName]
+    delete self.interfaces[iface]
+    delete self.neighbors[addr]
+  })
+  iface.on('route', function (route) {
+    var raddr = route.prefix[0] + '.' + route.prefix[1] + '.'
+      + route.prefix[2] + '.' + route.prefix[3]
+    self.routes[raddr] = ifname
+    Object.keys(self.interfaces).forEach(function (key) {
+      if (key !== ifname) self.interfaces[key].advertise(route)
+    })
   })
   return iface
 }
@@ -39,5 +52,7 @@ Router.prototype.close = function () {
 }
 
 Router.prototype.lookup = function (addr) {
-  return false
+  if (this.neighbors[addr]) return this.neighbors[addr].ifname
+  if (this.routes[addr]) return this.routes[addr]
+  return null
 }

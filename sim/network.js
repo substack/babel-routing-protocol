@@ -67,13 +67,14 @@ Object.keys(sim.nodes).forEach(function (i) {
       var packet = ip.decode(buf)
       var upacket = packet.protocol === 0x11 && udp.decode(packet.data)
 
+      var rface
       if (packet.destinationIp === addr && upacket
       && upacket.destinationPort === 6697) {
-        stream.write(packet.data)
+        stream.write(upacket.data)
       } else if (packet.destinationIp === addr) {
         console.log(packet)
-      } else if (router.lookup(packet.destinationIp)) {
-        console.log('TODO: intelligently route')
+      } else if (rface = router.lookup(packet.destinationIp)) {
+        node.send(rface, buf)
       } else {
         Object.keys(node.ifaces).forEach(function (key) {
           if (iface !== key) node.send(key, buf)
