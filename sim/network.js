@@ -37,7 +37,7 @@ for (var i = 1; i <= 50; i++) (function (i) {
 Object.keys(sim.nodes).forEach(function (i) {
   var node = sim.nodes[i]
   var addr = '192.168.1.' + i
-  counts[i] = { packets: 0, data: 0 }
+  counts[i] = { packets: 0, data: 0, miss: 0, match: 0 }
 
   var router = new Router({ id: randombytes(8) })
   var seen = {}
@@ -74,11 +74,16 @@ Object.keys(sim.nodes).forEach(function (i) {
       } else if (packet.destinationIp === addr) {
         console.log(packet)
       } else if (rface = router.lookup(packet.destinationIp)) {
+        counts[i].match += 1
         node.send(rface, buf)
       } else {
-        Object.keys(node.ifaces).forEach(function (key) {
-          if (iface !== key) node.send(key, buf)
-        })
+        counts[i].miss += 1
+        var ifaces = shuf(Object.keys(node.ifaces))
+        for (var j = 0; j < ifaces.length; j++) {
+          if (ifaces[j] === i) continue
+          node.send(ifaces[j], buf)
+          break
+        }
       }
     })
   })
@@ -127,12 +132,16 @@ function done () { printSummary('FINAL') }
 
 function printSummary (pre) {
   console.log('-------------------------')
-  console.log('# ' + pre + ' PACKET COUNT')
-  console.log(summary(Object.keys(counts).map(function (key) {
-    return counts[key].packets
-  })))
-  console.log('# ' + pre + ' DATA')
-  console.log(summary(Object.keys(counts).map(function (key) {
-    return counts[key].data
-  })))
+  var props = {
+    packets: 'PACKETS',
+    data: 'DATA',
+    miss: 'MISS',
+    match: 'MATCH'
+  }
+  Object.keys(props).forEach(function (key) {
+    console.log('# ' + pre + ' ' + props[key] + ' COUNT')
+    console.log(summary(Object.keys(counts).map(function (ckey) {
+      return counts[ckey][key]
+    })))
+  })
 }
