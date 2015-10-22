@@ -26,7 +26,7 @@ Router.prototype.createStream = function (ifname, addr) {
   var iface = new Iface(this.id, addr, self.D)
 
   // Initially, D(S) = 0, D(A) is infinite, and NH(A) is undefined.
-  self.D[addr] = Infinity
+  self.D[addr] = 0
 
   self.interfaces[ifname] = iface
   endof(iface, function () {
@@ -58,7 +58,7 @@ Router.prototype.createStream = function (ifname, addr) {
     }
   })
   return iface
-  function C (a, b) { return 0 }
+  function C (a, b) { return 1 }
 }
 
 Router.prototype.close = function () {
