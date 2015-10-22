@@ -36,16 +36,19 @@ Router.prototype.createStream = function (ifname, addr) {
     var raddr = toAddr(route.prefix)
     setDefaults(raddr)
   })
+  iface.on('nexthop', function (hop) {
+    self.B = toAddr(hop.addr)
+  })
   iface.on('update', function (update) {
-    var raddr = toAddr(update.prefix)
-    setDefaults(raddr)
+    var A = toAddr(update.prefix)
+    setDefaults(A)
     // http://tools.ietf.org/html/rfc6126#section-2.2
-    if (self.lookup(raddr) === ifname) {
-      self.NH[raddr] = ifname
-      self.D[raddr] = C(addr, raddr) + (self.D[raddr] || 0)
-    } else if (C(addr, raddr) + self.D[raddr] > self.D[addr]) {
-      self.NH[raddr] = ifname
-      self.D[raddr] = C(addr, raddr) + (self.D[raddr] || 0)
+    if (self.lookup(A) === iface) {
+      self.NH[A] = ifname
+      self.D[A] = C(A, self.B) + self.D[self.B]
+    } else if (C(A, self.B) + self.D[self.B] < self.D[A]) {
+      self.NH[A] = ifname
+      self.D[A] = C(A, self.B) + self.D[self.B]
     }
   })
   return iface
@@ -58,7 +61,7 @@ Router.prototype.createStream = function (ifname, addr) {
       self.D[raddr] = 0
     }
   }
-  function C (a, b) { return 1 }
+  function C (a, b) { return 0 }
 }
 
 Router.prototype.close = function () {
