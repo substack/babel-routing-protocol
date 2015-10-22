@@ -84,7 +84,6 @@ Object.keys(sim.nodes).forEach(function (i) {
         counts[i].miss += 1
         shuf(Object.keys(node.ifaces))
           .filter(function (key) { return key !== i })
-          .slice(0,1)
           .forEach(function (key) {
             node.send(key, buf)
           })
