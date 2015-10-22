@@ -26,7 +26,7 @@ Router.prototype.createStream = function (ifname, addr) {
   var iface = new Iface(this.id, addr, self.D)
 
   // Initially, D(S) = 0, D(A) is infinite, and NH(A) is undefined.
-  self.D[addr] = 0
+  self.D[addr] = Infinity
 
   self.interfaces[ifname] = iface
   endof(iface, function () {
@@ -34,26 +34,30 @@ Router.prototype.createStream = function (ifname, addr) {
   })
   iface.on('route', function (route) {
     var raddr = toAddr(route.prefix)
-    if (self.NH[raddr] === undefined) {
-      self.NH[raddr] = ifname
-    }
-    if (self.D[raddr] === undefined) {
-      self.D[raddr] = 1
-    }
+    setDefaults(raddr)
   })
   iface.on('update', function (update) {
     var raddr = toAddr(update.prefix)
+    setDefaults(raddr)
     // http://tools.ietf.org/html/rfc6126#section-2.2
     if (self.lookup(raddr) === ifname) {
       self.NH[raddr] = ifname
       self.D[raddr] = C(addr, raddr) + (self.D[raddr] || 0)
-    } else if (C(addr, raddr) + (self.D[raddr] || 0) > self.D[addr] || 0) {
+    } else if (C(addr, raddr) + self.D[raddr] > self.D[addr]) {
       self.NH[raddr] = ifname
       self.D[raddr] = C(addr, raddr) + (self.D[raddr] || 0)
     }
   })
   return iface
 
+  function setDefaults (raddr) {
+    if (self.NH[raddr] === undefined) {
+      self.NH[raddr] = ifname
+    }
+    if (self.D[raddr] === undefined) {
+      self.D[raddr] = 0
+    }
+  }
   function C (a, b) { return 1 }
 }
 
