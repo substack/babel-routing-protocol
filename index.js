@@ -33,34 +33,31 @@ Router.prototype.createStream = function (ifname, addr) {
     delete self.interfaces[iface]
   })
   iface.on('route', function (route) {
-    var raddr = toAddr(route.prefix)
-    setDefaults(raddr)
+    // ...
   })
   iface.on('nexthop', function (hop) {
     self.B = toAddr(hop.addr)
+    self.NH[self.B] = ifname
+    self.D[self.B] = 1
   })
   iface.on('update', function (update) {
     var A = toAddr(update.prefix)
-    setDefaults(A)
     // http://tools.ietf.org/html/rfc6126#section-2.2
     if (self.lookup(A) === iface) {
       self.NH[A] = ifname
       self.D[A] = C(A, self.B) + self.D[self.B]
-    } else if (C(A, self.B) + self.D[self.B] < self.D[A]) {
+      return
+    }
+    if (self.D[A] === undefined) {
+      self.D[A] = Infinity
+      self.NH[A] = ifname
+    }
+    if (C(A, self.B) + self.D[self.B] < self.D[A]) {
       self.NH[A] = ifname
       self.D[A] = C(A, self.B) + self.D[self.B]
     }
   })
   return iface
-
-  function setDefaults (raddr) {
-    if (self.NH[raddr] === undefined) {
-      self.NH[raddr] = ifname
-    }
-    if (self.D[raddr] === undefined) {
-      self.D[raddr] = 0
-    }
-  }
   function C (a, b) { return 0 }
 }
 
