@@ -23,7 +23,7 @@ function Router (opts) {
 
 Router.prototype.createStream = function (ifname, addr) {
   var self = this
-  var iface = new Iface(this.id, addr, self.D)
+  var iface = new Iface(this.id, addr, self)
 
   // Initially, D(S) = 0, D(A) is infinite, and NH(A) is undefined.
   self.D[addr] = 0
