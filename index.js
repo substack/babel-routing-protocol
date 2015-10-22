@@ -14,34 +14,47 @@ function Router (opts) {
   if (!this.id) throw new Error('router id required')
   if (this.id.length !== 8) throw new Error('router id must be 8 bytes')
   this.seqno = 0
-  this.neighbors = {}
   this.interfaces = {}
   this.sources = {}
-  this.routes = {}
-  this.pending = {}
+
+  this.D = {} // S -> distance
+  this.NH = {} // S -> next-hop router
 }
 
 Router.prototype.createStream = function (ifname, addr) {
   var self = this
-  var iface = new Iface(this.id, addr)
+  var iface = new Iface(this.id, addr, self.D)
+
+  // Initially, D(S) = 0, D(A) is infinite, and NH(A) is undefined.
+  self.D[addr] = 0
+
   self.interfaces[ifname] = iface
-  self.neighbors[addr] = {
-    iface: iface,
-    ifname: ifname
-  }
   endof(iface, function () {
     delete self.interfaces[iface]
-    delete self.neighbors[addr]
   })
   iface.on('route', function (route) {
-    var raddr = route.prefix[0] + '.' + route.prefix[1] + '.'
-      + route.prefix[2] + '.' + route.prefix[3]
-    self.routes[raddr] = ifname
-    Object.keys(self.interfaces).forEach(function (key) {
-      if (key !== ifname) self.interfaces[key].advertise(route)
-    })
+    var raddr = toAddr(route.prefix)
+    if (self.NH[raddr] === undefined) {
+      self.NH[raddr] = ifname
+    }
+    if (self.D[raddr] === undefined) {
+      self.D[raddr] = 1
+    }
+  })
+  iface.on('update', function (update) {
+    var raddr = toAddr(update.prefix)
+    // http://tools.ietf.org/html/rfc6126#section-2.2
+    if (self.lookup(raddr) === ifname) {
+      self.NH[raddr] = ifname
+      self.D[raddr] = C(addr, raddr) + (self.D[raddr] || 0)
+    } else if (C(addr, raddr) + (self.D[raddr] || 0) > self.D[addr] || 0) {
+      self.NH[raddr] = ifname
+      self.D[raddr] = C(addr, raddr) + (self.D[raddr] || 0)
+    }
   })
   return iface
+
+  function C (a, b) { return 1 }
 }
 
 Router.prototype.close = function () {
@@ -52,7 +65,13 @@ Router.prototype.close = function () {
 }
 
 Router.prototype.lookup = function (addr) {
-  if (this.neighbors[addr]) return this.neighbors[addr].ifname
-  if (this.routes[addr]) return this.routes[addr]
-  return null
+  var self = this
+  var dist = self.D[addr] === undefined ? Infinity : 0
+  if (dist === Infinity) return null
+  if (self.NH[addr] === undefined) return null
+  return self.NH[addr]
+}
+
+function toAddr (buf) {
+  return  buf[0] + '.' + buf[1] + '.' + buf[2] + '.' + buf[3]
 }
