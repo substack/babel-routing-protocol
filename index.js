@@ -43,7 +43,7 @@ Router.prototype.createStream = function (ifname, addr) {
   iface.on('update', function (update) {
     var A = toAddr(update.prefix)
     // http://tools.ietf.org/html/rfc6126#section-2.2
-    if (self.lookup(A) === iface) {
+    if (self.lookup(A) === ifname) {
       self.NH[A] = ifname
       self.D[A] = C(A, self.B) + self.D[self.B]
       return
