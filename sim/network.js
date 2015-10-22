@@ -157,8 +157,14 @@ function onexit () {
 }
 
 function estats () {
+  console.log('*** NETWORK SIZE: ' + NODES + ' NODES')
   console.log('*** DELIVERED: ' + (N-pending) + '/' + N)
   console.log('*** TRANSFERRED: ' + txdata + ' BYTES')
+  var totalData = Object.keys(counts).reduce(function (sum, key) {
+    return sum + counts[key].data
+  }, 0)
+  console.log('*** EFFICIENCY: '
+    + ((txdata / totalData) * 100).toFixed(4) + '%')
 }
 
 function printSummary (pre) {
