@@ -76,15 +76,18 @@ Object.keys(sim.nodes).forEach(function (i) {
       && upacket.destinationPort === 6697) {
         stream.write(upacket.data)
       } else if (packet.destinationIp === addr) {
-        console.log(packet)
+        //console.log(packet)
       } else if (rface = router.lookup(packet.destinationIp)) {
         counts[i].match += 1
         node.send(rface, buf)
       } else {
         counts[i].miss += 1
-        Object.keys(node.ifaces).forEach(function (key) {
-          if (key !== i) node.send(key, buf)
-        })
+        shuf(Object.keys(node.ifaces))
+          .filter(function (key) { return key !== i })
+          .slice(0,1)
+          .forEach(function (key) {
+            node.send(key, buf)
+          })
       }
     })
   })
@@ -94,6 +97,9 @@ setTimeout(function () {
   printSummary('WARMUP')
   sendData()
 }, 5000)
+
+var N = 100
+var pending = N
 
 function sendData () {
   Object.keys(routers).forEach(function (i) {
@@ -106,8 +112,6 @@ function sendData () {
     })
   })
 
-  var N = 100
-  var pending = N
   var dstnode = sim.nodes[NODES]
   var dst = '192.168.1.' + NODES
   var sent = {}
@@ -140,7 +144,16 @@ function sendData () {
   })(i)
 }
 
-function done () { printSummary('FINAL') }
+function done () {
+  printSummary('FINAL')
+  console.log('*** DELIVERED: ' + (N-pending) + '/' + N)
+  process.removeListener('exit', onexit)
+}
+process.on('exit', onexit)
+function onexit () {
+  printSummary('EXIT')
+  console.log('*** DELIVERED: ' + (N-pending) + '/' + N)
+}
 
 function printSummary (pre) {
   console.log('-------------------------')
