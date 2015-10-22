@@ -12,8 +12,13 @@ var udp = require('udp-packet')
 var Simulator = require('network-simulator')
 var sim = new Simulator()
 
+var minimist = require('minimist')
+var argv = minimist(process.argv.slice(2), {
+  default: { nodes: 20 }
+})
+
 var connected = {}, ifaces = {}, counts = {}, addrs = {}
-var NODES = 50
+var NODES = argv.nodes
 for (var i = 1; i <= NODES; i++) (function (i) {
   var node = sim.createNode(i, [ 'eth0', 'eth1', 'eth2', 'eth3', 'eth4' ])
   ifaces[i] = Object.keys(node.ifaces)
@@ -95,7 +100,7 @@ Object.keys(sim.nodes).forEach(function (i) {
 setTimeout(function () {
   printSummary('WARMUP')
   sendData()
-}, 5000)
+}, 5 * 1000)
 
 var N = 100
 var pending = N

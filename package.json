@@ -34,6 +34,7 @@
     "array-shuffle": "^1.0.0",
     "connected-components": "^1.0.0",
     "edges-to-adjacency-list": "^1.0.0",
+    "minimist": "^1.2.0",
     "mock-dgram": "^0.1.2",
     "randombytes": "^2.0.1",
     "summary-statistics": "^1.0.0",
