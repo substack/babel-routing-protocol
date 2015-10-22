@@ -99,6 +99,7 @@ setTimeout(function () {
 
 var N = 100
 var pending = N
+var txdata = 0
 
 function sendData () {
   Object.keys(routers).forEach(function (i) {
@@ -121,6 +122,7 @@ function sendData () {
       var hex = packet.data.toString('hex')
       if (packet.destinationIp === dst && sent[hex] > 0) {
         sent[hex] -= 1
+        txdata += buf.length
         if (--pending === 0) done()
       }
     })
@@ -145,13 +147,18 @@ function sendData () {
 
 function done () {
   printSummary('FINAL')
-  console.log('*** DELIVERED: ' + (N-pending) + '/' + N)
+  estats()
   process.removeListener('exit', onexit)
 }
 process.on('exit', onexit)
 function onexit () {
   printSummary('EXIT')
+  estats()
+}
+
+function estats () {
   console.log('*** DELIVERED: ' + (N-pending) + '/' + N)
+  console.log('*** TRANSFERRED: ' + txdata + ' BYTES')
 }
 
 function printSummary (pre) {
