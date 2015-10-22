@@ -13,7 +13,7 @@ var Simulator = require('network-simulator')
 var sim = new Simulator()
 
 var connected = {}, ifaces = {}, counts = {}, addrs = {}
-var NODES = 5
+var NODES = 50
 for (var i = 1; i <= NODES; i++) (function (i) {
   var node = sim.createNode(i, [ 'eth0', 'eth1', 'eth2', 'eth3', 'eth4' ])
   ifaces[i] = Object.keys(node.ifaces)
@@ -46,6 +46,7 @@ Object.keys(sim.nodes).forEach(function (i) {
   var seen = {}
   Object.keys(addrs[i]).forEach(function (iface) {
     var stream = router.createStream(iface, addr)
+    var srcPort = Math.floor(Math.random() * Math.pow(2,16))
     stream.pipe(through(function (buf, enc, next) {
       node.send(iface, ip.encode({
         version: 4,
@@ -53,7 +54,7 @@ Object.keys(sim.nodes).forEach(function (i) {
         sourceIp: addr,
         destinationIp: addrs[i][iface],
         data: udp.encode({
-          sourcePort: Math.floor(Math.random() * Math.pow(2,16)),
+          sourcePort: srcPort,
           destinationPort: 6697,
           data: buf
         })
@@ -108,7 +109,7 @@ function sendData () {
   var N = 100
   var pending = N
   var dstnode = sim.nodes[NODES]
-  var dst = '192.168.0.' + NODES
+  var dst = '192.168.1.' + NODES
   var sent = {}
 
   Object.keys(dstnode.ifaces).forEach(function (iface) {
@@ -124,7 +125,7 @@ function sendData () {
 
   for (var i = 0; i < N; i++) (function (i) {
     var srci = Math.floor(Math.random() * (NODES-1) + 1)
-    var src = '192.168.0.' + srci
+    var src = '192.168.1.' + srci
     var msg = randombytes(Math.floor(Math.random() * 1000))
     var hex = msg.toString('hex')
     sent[hex] = (sent[hex] || 0) + 1
